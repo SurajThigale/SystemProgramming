@@ -1,0 +1,233 @@
+﻿@using Microsoft.AspNetCore.Html
+@using UIParser.Services
+@inherits LayoutComponentBase
+@inject ConfigParser.Services.ConfigNativeService ConfigCommsService
+
+<style>
+    .app-fab--absolute {
+        position: fixed;
+        bottom: 3rem;
+        right: 1rem;
+        z-index: 100
+    }
+</style>
+
+@if (!_isDarkMode)
+{
+    <link rel="stylesheet" href="_content/Radzen.Blazor/css/material-base.css">
+    <style>
+        body {
+            color: var(--mud-palette-text-primary);
+            font-family: var(--mud-typography-default-family);
+            font-size: var(--mud-typography-default-size);
+            font-weight: var(--mud-typography-default-weight);
+            line-height: var(--mud-typography-default-lineheight);
+            letter-spacing: var(--mud-typography-default-letterspacing);
+            text-transform: var(--mud-typography-default-text-transform);
+            background-color: var(--mud-palette-background);
+        }
+
+        .mud-tabs-toolbar {
+            position: relative;
+            background-color: var(--mud-palette-surface);
+        }
+    </style>
+}
+else
+{
+    <link rel="stylesheet" href="_content/Radzen.Blazor/css/material-dark-base.css">
+
+    <style>
+
+        body {
+            color: var(--mud-palette-text-primary);
+            font-family: var(--mud-typography-default-family);
+            font-size: var(--mud-typography-default-size);
+            font-weight: var(--mud-typography-default-weight);
+            line-height: var(--mud-typography-default-lineheight);
+            letter-spacing: var(--mud-typography-default-letterspacing);
+            text-transform: var(--mud-typography-default-text-transform);
+            background-color: rgb(40,40,40);
+        }
+
+        .mud-tabs-toolbar {
+            position: relative;
+            background-color: rgb(35,35,35);
+        }
+
+    </style>
+}
+
+<MudThemeProvider @ref="@_mudThemeProvider" @bind-IsDarkMode="@_isDarkMode" Theme="_theme" />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Fixed="true" Elevation="1" Dense="true">
+        <!-- Menu items -->
+        <MudMenu Color="Color.Inherit" Size="Size.Small" MaxHeight="450" Label="Menu" Variant="Variant.Text" AnchorOrigin="Origin.BottomLeft"
+                 Dense="true"
+                 FullWidth="false">
+            <MudMenuItem OnClick="@OnXMLOpenClicked">Open XML...</MudMenuItem>
+            <MudMenuItem OnClick="@OnExcelOpenClicked">Open Single Source Excel...</MudMenuItem>
+            <MudMenuItem OnClick="@OnGenerateClicked">Generate</MudMenuItem>
+            <MudMenuItem OnClick="@OnExportClicked">Save As ...</MudMenuItem>
+            <MudMenuItem OnClick="@OnUploadToSN">Upload to SN</MudMenuItem>
+        </MudMenu>
+
+        <MudMenu Color="Color.Inherit" Size="Size.Small" MaxHeight="450" Label="Help" Variant="Variant.Text" AnchorOrigin="Origin.BottomLeft"
+                 Dense="true"
+                 FullWidth="false">
+            <MudMenuItem OnClick="@OnUserManual">View Help</MudMenuItem>
+            <MudMenuItem OnClick="@OnOpenLogs">Open Log files...</MudMenuItem>
+            <MudMenuItem OnClick="@ShowAboutDialog">About...</MudMenuItem>
+        </MudMenu>
+
+        <MudSpacer />
+        <MudSpacer />
+
+        <MudTooltip Text="Notifications">
+            <MudMenu MaxHeight="450" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.BottomLeft">
+                <ActivatorContent>
+                    <MudBadge Visible="@AlertService!.UnreadMessages" Icon="@Icons.Material.Filled.NotificationsActive" Color="Color.Error" Overlap="true" Bordered="true">
+                        <MudIconButton Size="Size.Small" Icon="@Icons.Material.Filled.Notifications" aria-label="share"></MudIconButton>
+                    </MudBadge>
+                </ActivatorContent>
+                <ChildContent>
+                    @if (AlertService!.Messages.Count > 0)
+                    {
+                        SetNoficationBadge(false);
+
+                        @foreach (NotificationSchema alert in AlertService!.Messages)
+                        {
+                            <MudMenuItem style="width:450px;max-height:250px">
+
+                                @{
+                                    var style = $"{alert.GetTextColor()}";
+                                }
+                                <MudCard Outlined="true" Border="true" Elevation="5" class="pa-2">
+                                    <MudStack Class="ml-2" Justify="Justify.FlexStart" AlignItems="AlignItems.Start" Row="false" Spacing="2">
+                                        <MudText style="@style" Typo="Typo.caption">@alert.Title</MudText>
+                                            <MudText Typo="Typo.caption">
+                                                @{
+                                                string[] lines = alert.Description.Split("\n");
+
+                                                if (lines.Length > 1)
+                                                {
+                                                    <div>
+                                                        <p>@alert.DateTime : @alert.Alert.ToString()</p>
+                                                        <ul>
+                                                            @foreach (var line in lines)
+                                                            {
+                                                                <li>@line</li>
+                                                            }
+                                                        </ul>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <p>@($"{alert.DateTime} : {alert.Alert.ToString()} : {alert.Description}")</p>
+                                                }
+                                            }
+                                        </MudText>
+                                    </MudStack>
+
+                                    @if (alert.ShowOpenLogButton)
+                                    {
+                                        <MudButton class="mt-2" OnClick="@OnOpenLogs" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary">View Log</MudButton>
+                                    }
+
+                                </MudCard>
+                            </MudMenuItem>
+
+                        }
+                    }
+                </ChildContent>
+            </MudMenu>
+        </MudTooltip>
+
+        @*<MudIconButton OnClick="() => Reload() " Icon="@Icons.Material.Filled.Refresh" aria-label="share"></MudIconButton> *@
+
+        @if (_isDarkMode)
+        {
+            <MudTooltip Text="Change to Light Theme">
+                <MudIconButton OnClick="() => ChangeTheme(false) " Icon="@Icons.Material.Filled.LightMode" aria-label="share"></MudIconButton>
+            </MudTooltip>
+        }
+        else
+        {
+            <MudTooltip Text="Change to Dark Theme">
+                <MudIconButton OnClick="() => ChangeTheme(true) " Icon="@Icons.Material.Filled.Nightlight" aria-label="share"></MudIconButton>
+            </MudTooltip>
+        }
+    </MudAppBar>
+
+    <MudMainContent Class="vh-90 vw-95 mt-2 ml-5 mr-5 mb-2">
+        <ErrorBoundary Context="exception" @ref="_errorBoundary">
+            <ChildContent>
+                @Body
+            </ChildContent>
+            <ErrorContent>
+                <MudStack Row="false">
+                    <p class="fw-bold text-danger">@exception.Message</p>
+                    <MudButton FullWidth="false" Style="width:100px;" Variant="Variant.Outlined" Color="Color.Secondary" OnClick="@Reload">Reload</MudButton>
+                </MudStack>
+            </ErrorContent>
+        </ErrorBoundary>
+    </MudMainContent>
+
+    @*     <div class="fixed-bottom mb-5" style="width:100%;">
+    <marquee style="color:red">@AlertMessage</marquee>
+    </div> *@
+
+
+    <MudAppBar Style="height:25px" Bottom="true" Fixed="true" Color="Color.Dark" Elevation="1" Dense="true">
+
+        <MudText Color="Color.Inherit"><footer>@FooterFilePathDisplay</footer></MudText>
+        <MudSpacer />
+        <div>
+            <MudText Color="Color.Inherit"><footer>&copy; @AppService!.ProductCopyright (@AppService!.ProductName @AppService!.ProductVersion)</footer></MudText>
+        </div>
+
+    </MudAppBar>
+
+    @if (!String.IsNullOrEmpty(configService?.getConfigFileName()))
+    {
+        string message = "";
+        if (AppState!.GenerationInProgrss)
+        {
+            message = "Generating Binary";
+        }
+        else if (AppState!.UploadToSNInProgress)
+        {
+            message = "Uploading to SN";
+        }
+        else if (AppState!.ExportInProgress)
+        {
+            message = "Exporting XML";
+        }
+
+        @if (!AppState!.GenerationInProgrss && !AppState!.ExportInProgress && !AppState!.UploadToSNInProgress)
+        {
+            <MudFab Color="Color.Info" Class="app-fab--absolute ani-hover-float" OnClick="@( async () => { await OnGenerateClicked(null!); })"
+                    Icon="@Icons.Material.Filled.PlayCircle" Size="Size.Small" Label="Generate Binary" />
+        }
+        else
+        {
+
+            <MudStack Class="app-fab--absolute">
+                <MudTooltip Placement="Placement.Top" Text="@message">
+                    <MudButton Size="Size.Medium" Style="border-radius: 17px;" Color="Color.Info" Variant="Variant.Filled">
+                        <MudProgressCircular Size="Size.Small" Style="color: white" Indeterminate="true" />
+                        <MudText Class="ml-2">@message</MudText>
+                        </MudButton>
+                    </MudTooltip>
+                </MudStack>
+        }
+
+
+
+    }
+    </MudLayout>
+
+

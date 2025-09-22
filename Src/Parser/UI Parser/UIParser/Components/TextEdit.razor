@@ -1,0 +1,183 @@
+﻿@using System.Xml.Linq;
+@using System.Net
+@using UIParser.Services
+@using UIParser.Models
+@using Radzen
+@using Radzen.Blazor
+
+@{
+    bool isReadOnly = ElementValue is null || (!ElementFound ?? false);
+
+    if (String.IsNullOrEmpty(configService?.getConfigFileName())) isReadOnly = false;
+
+    string color;
+    if (Name == "Config XML Version")
+        color = String.Empty;
+    else
+        color = isReadOnly ? @"color: red" : (ElementValue?.bIsDataUpdate ?? false) ? @"color: orange" : (String.Empty);
+        
+    string style = $"width: 100%; {color}";
+}
+
+
+
+<RadzenRow Style="@color" AlignItems="Radzen.AlignItems.Center" class="mt-2" @onclick="() => ShowReadOnlyMessage(isReadOnly)">
+    <RadzenColumn Style="@style" Size="12" Align="Align.Left" SizeMD="5">
+        <RadzenLabel Text="@Name" />
+    </RadzenColumn>
+    <RadzenColumn Size="12" SizeMD="4">
+            @if (Type == "int")
+            {
+                int? previousValue = int.TryParse(ElementValue?.Value!.Value, out int parsedPreviousValue) ? (int?)parsedPreviousValue : null;
+                int? currentValue = int.TryParse(ElementValue?.Value!.Value, out int parsedCurrentValue) ? (int?)parsedCurrentValue : null;
+
+                if (currentValue is null) ElementFound = false;
+
+            isReadOnly = isReadOnly || currentValue is null;
+
+            string color = isReadOnly ? @"color: red" : (ElementValue?.bIsDataUpdate ?? false) ? @"color: orange" : (String.Empty);
+
+                if (String.IsNullOrEmpty(configService?.getConfigFileName())) color = String.Empty;
+
+                string style = $"height: 30px; width: 100%; {color}";
+
+            <MudTextField @ref="@intTextBoxRef" ReadOnly="@isReadOnly" Dense="true" Variant="MudBlazor.Variant.Outlined"
+                          Style="@style"
+                          AdornmentColor="Color.Success"
+                          Value="@currentValue"
+                          T="int?"
+                          Validation="@(new Func<string?, bool>(ValidateIntType))"
+                          ValueChanged="(async (x) => await UpdateAttribute(x,previousValue, currentValue))" />
+            }
+            else if (Type == "double")
+            {
+                double? previousValue = double.TryParse(ElementValue?.Value!.Value, out double parsedPreviousValue) ? (double?)parsedPreviousValue : null;
+                double? currentValue = double.TryParse(ElementValue?.Value!.Value, out double parsedCurrentValue) ? (double?)parsedCurrentValue : null;
+
+                if (currentValue is null) ElementFound = false;
+                isReadOnly = isReadOnly || currentValue is null;
+                string color = isReadOnly ? @"color: red" : (ElementValue?.bIsDataUpdate ?? false) ? @"color: orange" : (String.Empty);
+
+                if (String.IsNullOrEmpty(configService?.getConfigFileName())) color = String.Empty;
+
+                string style = $"width: 170px; height: 30px; {color}";
+
+            <MudTextField @ref="@decimalTextBoxRef" ReadOnly="@isReadOnly" Dense="true" Variant="MudBlazor.Variant.Outlined"
+                              Style="@style"
+                              AdornmentColor="Color.Success"
+                              T="double?"
+                              Value="@currentValue"
+                              Validation="@(new Func<string?, bool>(value => ValidateDoubleType(value)))"
+            ValueChanged="(async (x) => await UpdateAttribute(x,previousValue, currentValue))" />
+        }
+        else if (Type == "string")
+        {
+            if (Name == "Config XML Version")
+            {
+                isReadOnly = true; 
+            }
+
+                        string? previousValue = ElementValue?.Value!.Value;
+                        string? currentValue = ElementValue?.Value!.Value;
+
+                        if (currentValue is null) ElementFound = false;
+                        
+                        // Set default value for Config XML Version when it's null or empty
+                        if (AppState!.IsGenerateClicked && Name == "Config XML Version" && string.IsNullOrEmpty(currentValue))
+                        {
+                            currentValue = AppState!.VersionNo;
+                        }
+                        
+                        isReadOnly = isReadOnly || (currentValue is null && Name != "Config XML Version");
+                        
+                        // Set color based on conditions, but never for Config XML Version
+                        string color;
+                        if (Name == "Config XML Version")
+                            color = String.Empty;
+                        else if (String.IsNullOrEmpty(configService?.getConfigFileName()))
+                            color = String.Empty;
+                        else
+                            color = isReadOnly ? @"color: red" : (ElementValue?.bIsDataUpdate ?? false) ? @"color: orange" : String.Empty;
+
+                        string style = $"width: 170px; height: 30px; {color}";
+
+                    <MudTextField @ref="@stringTextBoxRef" ReadOnly="@isReadOnly" Dense="true" Variant="MudBlazor.Variant.Outlined"
+                                  Style="@style"
+                                  AdornmentColor="Color.Success"
+                                  Value="@currentValue"
+                                  T="string"
+                                  ValueChanged="(async (x) => await UpdateAttribute(x,previousValue, currentValue))" />
+                
+                
+            }
+            else if (Type == "binary")
+            {
+                int? previousIntValue = int.TryParse(ElementValue?.Value!.Value, out int parsedPreviousValue) ? (int?)parsedPreviousValue : null;
+                int? currentIntValue = int.TryParse(ElementValue?.Value!.Value, out int parsedCurrentValue) ? (int?)parsedCurrentValue : null;
+
+                if (currentIntValue is null) ElementFound = false;
+
+                Binary? previousValue = new Binary(previousIntValue ?? 0);
+                Binary? currentValue = new Binary(currentIntValue ?? 0);
+
+                isReadOnly = isReadOnly || currentValue is null;
+
+                string color = isReadOnly ? @"color: red" : (ElementValue?.bIsDataUpdate ?? false) ? @"color: orange" : (String.Empty);
+
+                if (String.IsNullOrEmpty(configService?.getConfigFileName())) color = String.Empty;
+
+                string style = $"width: 170px; height: 30px; {color}";
+
+
+            <MudTextField @ref="@stringTextBoxRef" ReadOnly="@isReadOnly" Dense="true" Variant="MudBlazor.Variant.Outlined"
+                          Style="@style"
+                          AdornmentColor="Color.Success"
+                          Value="@currentValue?.BinaryValue"
+                          Validation="@(new Func<string?, bool>(ValidateBinaryType))"
+                          T="string"
+                          ValueChanged="(async (x) => await UpdateAttribute<Binary>(new Binary(x),previousValue, currentValue))" />
+            }
+            else if (Type == "IP")
+            {
+                try
+                {
+                    IPAddress? previousValue = IPAddress.Parse(ElementValue?.Value!.Value!);
+                    IPAddress? currentValue = IPAddress.Parse(ElementValue?.Value!.Value!);
+
+                    isReadOnly = isReadOnly || currentValue is null;
+                    string color = isReadOnly ? @"color: red" : (ElementValue?.bIsDataUpdate ?? false) ? @"color: orange" : (String.Empty);
+
+                    if (String.IsNullOrEmpty(configService?.getConfigFileName())) color = String.Empty;
+
+                    string style = $"width: 170px; height: 30px; {color}";
+
+                <MudTextField @ref="@ipTextBoxRef" ReadOnly="@isReadOnly" Dense="true" Variant="MudBlazor.Variant.Outlined"
+                              Style="@style"
+                              AdornmentColor="Color.Success"
+                              Value="@currentValue"
+                              Converter="@converter"
+                              Validation="@(new Func<IPAddress, string>(value => validateIP(value)))"
+                              T="IPAddress"
+                              ValueChanged="(async (x) => await UpdateAttribute(x,previousValue, currentValue))" />
+                }
+                catch
+                {
+                    ElementFound = false;
+                    IPAddress? previousValue = null;
+                    IPAddress? currentValue = null;
+                <MudTextField Dense="true" T="IPAddress"
+                              ValueChanged="(async (x) => await UpdateAttribute(x,previousValue, currentValue))"
+                              ReadOnly="true"
+                              Variant="MudBlazor.Variant.Outlined"
+                              Style="width: 170px; height: 30px;color:red" AdornmentColor="Color.Success" Value="@currentValue" />
+                }
+
+            }
+    </RadzenColumn>
+    <RadzenColumn Style="@style" Size="12" Align="Align.Left" SizeMD="2">
+        <RadzenLabel Text="@Remark" />
+    </RadzenColumn>
+</RadzenRow>
+
+
+

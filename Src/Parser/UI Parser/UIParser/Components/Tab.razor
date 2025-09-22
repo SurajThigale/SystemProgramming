@@ -1,0 +1,42 @@
+﻿@using UIParser.Models
+@using UIParser;
+
+<style>
+    .scrollable-tab-content {
+        max-height: 77vh;
+        min-height: 77vh;
+        width: 90vw;
+        overflow: auto;
+    }
+</style>
+
+<MudTabs @ref="tabs" ApplyEffectsToContainer="true" Border="true" Elevation="1" Rounded="true" Style="@Style" PanelClass="@Class">
+    @foreach (var tab in TabItems!)
+    {
+        UIFileParser uiFile = new UIFileParser();
+
+        var UIRoot = Task.Run(async () => await uiFile.parseXML(tab.Source!)).GetAwaiter().GetResult();
+
+        <MudTabPanel style="@tab.Style" class="@tab.Class" Text="@tab.Name" Elevation="0" Outlined="true">
+            <TabContent>
+                <MudText>@tab.Name</MudText>
+            </TabContent>
+            <ChildContent>
+                <div style="@tab.Style" class="scrollable-tab-content">
+                    @{
+                        if (UIRoot is not null)
+                        {
+                            <UIParser.Components.Grid Class="@UIRoot.Class" Style="@UIRoot.Style" Elements="@UIRoot.Elements" Rows="@UIRoot.RowDefinition.Count" Columns="@UIRoot.ColumnDefinition.Count"></UIParser.Components.Grid>
+                        }
+                    }
+                </div>
+            </ChildContent>
+
+
+        </MudTabPanel>
+
+    }
+    </MudTabs>
+
+
+

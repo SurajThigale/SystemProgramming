@@ -1,0 +1,9 @@
+﻿@using UIParser.Models
+
+<MudButtonGroup Size="Size.Medium" Color="Color.Primary" Class="@this.Class" Variant="Variant.Outlined">
+    @foreach (var button in Buttons!)
+    {
+        <MudButton Variant="Variant.Filled" Class="@button.Class" Color="Color.Primary">@button.Name</MudButton>
+    }
+</MudButtonGroup>
+

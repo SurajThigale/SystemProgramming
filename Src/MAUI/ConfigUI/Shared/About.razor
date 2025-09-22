@@ -1,0 +1,35 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudStack Row="false">
+            <MudText class="mt-2" Typo="Typo.subtitle1" Align="Align.Left"><strong>&copy; @ProductCopyright. All rights Reserved. </strong></MudText>
+
+            <MudList Dense="true">
+                <MudListSubheader>
+                    Contributed By
+                </MudListSubheader>
+                <MudListItem Dense="true" IconSize="Size.Small" Avatar="@Icons.Material.Filled.Person" Text="Abhijit Khairnar" />
+                <MudListItem Dense="true" IconSize="Size.Small" Avatar="@Icons.Material.Filled.Person" Text="Deepankar Chakraborty" />
+                <MudListItem Dense="true" IconSize="Size.Small" Avatar="@Icons.Material.Filled.Person" Text="Rahul Singh" />
+                <MudListItem Dense="true" IconSize="Size.Small" Avatar="@Icons.Material.Filled.Person" Text="Mukund Tonape" />
+            </MudList>
+
+            <MudList Dense="true">
+                <MudListSubheader>
+                    For any support or issue reporting contact:
+                </MudListSubheader>
+                <MudListItem Dense="true" IconSize="Size.Small" Avatar="@Icons.Material.Filled.ContactMail">
+                    <MudLink Href="mailto:jyoti.agrawal@thyssenkrupp.com">Mukund Tonape (mukund.tonape@thyssenkrupp.com)</MudLink>
+                 </MudListItem>
+
+                <MudListItem Dense="true" IconSize="Size.Small" Avatar="@Icons.Material.Filled.ContactMail">
+                    <MudLink Href="mailto:amit.kumar5@thyssenkrupp.com">Amit Kumar (amit.kumar5@thyssenkrupp.com)</MudLink>
+                </MudListItem>
+
+            </MudList>
+
+            <div class="p-3" style="width:100%;">
+                <marquee style="color:#5ebdec"><strong>@ProductName @ProductVersion</strong></marquee>
+            </div>
+        </MudStack>
+    </DialogContent>
+</MudDialog>

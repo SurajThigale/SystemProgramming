@@ -1,0 +1,127 @@
+﻿@using ConfigParser.Services
+@using Excubo.Blazor.Grids
+@using UIParser.Services
+@using Radzen
+@using Radzen.Blazor
+@using MudBlazor
+@using MudBlazor.Services
+@using UIParser.Components.Dialogs
+
+<Excubo.Blazor.Grids.Grid AllowResize="true" style="@Style" ElementClass="@Class" class="@Class" RowGap="2em" ColumnGap="1em">
+    <TitleSettings HeadingLevel="6" Alignment="Alignment.Center" />
+
+    @{
+        var orderedKeys = new List<string>();
+
+        // Ensure correct order manually
+        if (configNativeService?.GeneratedData?.data is not null)
+        {
+            orderedKeys.Add("master");
+
+            var lcuKeys = configNativeService.GeneratedData.data.Keys
+            .Where(k => k.StartsWith("lcu"))
+            .OrderBy(k => int.Parse(k.Replace("lcu", ""))); // Ensure LCU0, LCU1 ordered
+            orderedKeys.AddRange(lcuKeys);
+
+            var iocKeys = configNativeService.GeneratedData.data.Keys
+            .Where(k => k.StartsWith("ioc"))
+            .OrderBy(k => int.Parse(k.Replace("ioc", ""))); // Ensure IOC0, IOC1 ordered
+            orderedKeys.AddRange(iocKeys);
+
+            var xcKeys = configNativeService.GeneratedData.data.Keys
+            .Where(k => k.StartsWith("xc"))
+            .OrderBy(k => int.Parse(k.Replace("xc", ""))); // Ensure XC0, XC1 ordered
+            orderedKeys.AddRange(xcKeys);
+        }
+
+        int index = 0;
+        int itemsPerRow = 2;
+
+        foreach (var key in orderedKeys)
+        {
+            int row = index / itemsPerRow;
+            int column = index % itemsPerRow;
+
+            string title = key switch
+            {
+                "master" => "MASTER",
+                _ when key.StartsWith("ioc") => "IOC" + (int.Parse(key.Replace("ioc", ""))), // IOC0 → IOC1
+                _ when key.StartsWith("xc") => "EX" + (int.Parse(key.Replace("xc", ""))), // XC0 → XC1
+                _ when key.StartsWith("lcu") => "LCU" + (int.Parse(key.Replace("lcu", ""))), // LCU0 → LCU1
+                _ => key.ToUpper()
+            };
+
+            <Element Row="@row" Column="@column" Title="@title">
+                @RenderHeaderCard(key)
+            </Element>
+
+            index++;
+        }
+    }
+</Excubo.Blazor.Grids.Grid>
+
+@code {
+    private bool isStatusHidden = false;
+
+    RenderFragment RenderHeaderCard(string key) => __builder =>
+    {
+        if (configNativeService?.GeneratedData?.data?.TryGetValue(key, out var data) == true)
+        {
+            var isDisabled = configNativeService?.GeneratedData == null;
+            var isError = data.Status?.Contains("not matches") ?? false;
+            var color = isError ? MudBlazor.Color.Error : MudBlazor.Color.Primary;
+
+            var tooltipText = key.ToUpper() switch
+            {
+                "MASTER" => "Master Structure Insider",
+                _ when key.StartsWith("ioc") => "IOC Structure Insider",
+                _ when key.StartsWith("xc") => "XC Structure Insider",
+                _ when key.StartsWith("lcu") => "LCU Structure Insider",
+                _ => "Structure Insider"
+            };
+
+            <RadzenCard>
+                <RadzenTextArea Rows="4"
+                                Value="@data.BinaryData"
+                                Disabled="true"
+                                class="w-100" />
+
+                <MudStack Justify="Justify.SpaceBetween"
+                          AlignItems="MudBlazor.AlignItems.Start"
+                          Row="true"
+                          Class="mt-1">
+
+                    <MudText hidden="@isDisabled"
+                             Typo="Typo.body2"
+                             Color="@color">
+                        Status: @data.Status
+                    </MudText>
+
+                    @if (!configService!.isGenerationModified)
+                    {
+                        <MudTooltip Text="@tooltipText">
+                            <MudIconButton Size="Size.Small"
+                                           Icon="@Icons.Material.Filled.Info"
+                                           Color="MudBlazor.Color.Primary"
+                                           hidden="@isDisabled"
+                                           OnClick="@(async () => await ShowCHeadersByKey(key))" />
+                        </MudTooltip>
+                    }
+                    else
+                    {
+                        <MudTooltip Text="Outdated Configuration. Please regenerate the binary after updating values.">
+                            <MudIconButton Size="Size.Small"
+                                           Icon="@Icons.Material.Filled.Info"
+                                           Color="MudBlazor.Color.Error"
+                                           hidden="@isDisabled"
+                                           OnClick="@(async () => await ShowCHeadersByKey(key))" />
+                        </MudTooltip>
+                    }
+                </MudStack>
+            </RadzenCard>
+            ;
+        }
+    };
+}
+
+

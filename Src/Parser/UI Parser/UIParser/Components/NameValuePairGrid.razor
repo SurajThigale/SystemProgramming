@@ -1,0 +1,91 @@
+﻿@using ConfigParser.Model.ParserMetaData;
+@using System.Xml.Linq;
+@using System.Net
+@using Radzen
+@using UIParser.Models
+@using Radzen.Blazor
+
+<style>
+    .rz-cell-data {
+        height: 40px;
+    }
+</style>
+
+@{
+    bool isDisabled = false;
+    if (String.IsNullOrEmpty(configService?.getConfigFileName())) isDisabled = true;
+}
+
+
+@if (ShowAddDeleteButtons ?? true)
+{
+    <MudStack Row="true" Spacing="2" Style="@ButtonsStyle" Class="@ButtonsClass">
+        <MudButton Disabled="@isDisabled" OnClick="@AddElements" Color="@Color.Success" Class="add-item-btn">Add Item</MudButton>
+        <MudButton Disabled="@isDisabled" OnClick="@DeleteElements" Color="@Color.Error" Class="remove-item-btn">Remove Item</MudButton>
+    </MudStack>
+}
+
+<RadzenDataGrid GridLines="DataGridGridLines.Both" AllowColumnResize="true" Density="Density.Compact" EditMode="Radzen.DataGridEditMode.Single"
+                Data="@Items" TItem="IXmlNode" ColumnWidth="100px" Context="data" Style="@Style" class="@(this.Class + " pa-2")" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedItem>
+
+    <Columns>
+
+        <RadzenDataGridColumn Width="100px" TextAlign="TextAlign.Center" Resizable="true" TItem="IXmlNode" Title="Name">
+
+            <Template Context="element">
+                @{
+                    bool bValueNull = false;
+                    var value = element!.Value!.Value.ToString();
+                    @if (Type == "int")
+                    {
+                        int? currentIntValue = int.TryParse(value, out int parsedCurrentValue) ? (int?)parsedCurrentValue : null;
+                        bValueNull = currentIntValue is null;
+                    }
+                    else
+                    {
+                        bValueNull = value is null;
+                    }
+
+                    string? previousValue = value;
+                    string? currentValue = value;
+                }
+
+                <MudTextField T="string" AdornmentColor="Color.Default" DisableUnderLine="true"
+                              Style="@((bValueNull) ? "color:red; height:20px;" : (element.bIsDataUpdate ? "color:orange; height:20px;" : " height:20px;"))"
+                              Value="@element.Name"
+                              ValueChanged="@(async (x) => await HandleTextChanged<string>(x, element, previousValue, currentValue, true))" />
+            </Template>
+        </RadzenDataGridColumn>
+
+        <RadzenDataGridColumn Width="100px" TextAlign="TextAlign.Center" Resizable="true" TItem="IXmlNode" Title="Value">
+            <Template Context="element">
+                @if (Type == "int")
+                {
+                    var value = element!.Value!.Value.ToString();
+                    int? previousValue = int.TryParse(value, out int parsedPreviousValue) ? (int?)parsedPreviousValue : null;
+                    int? currentValue = int.TryParse(value, out int parsedCurrentValue) ? (int?)parsedCurrentValue : null;
+                    <MudTextField T="int?" AdornmentColor="Color.Default" DisableUnderLine="true"
+                                  Style="@((currentValue is null) ? "color:red; height:20px;" : (element.bIsDataUpdate ? "color:orange; height:20px;" : " height:20px;"))"
+                                  Value="@currentValue"
+                                  Validation="@(new Func<string?, bool>(ValidateIntType))"
+                                  ValueChanged="@(async (x) => await HandleTextChanged<int?>(x, element, previousValue, currentValue))" />
+                }
+                else
+                {
+                    var value = element!.Value!.Value.ToString();
+                    string? previousValue = value;
+                    string? currentValue = value;
+                    <MudTextField T="string" AdornmentColor="Color.Default" DisableUnderLine="true"
+                                  Style="@((currentValue is null) ? "color:red; height:20px;" : (element.bIsDataUpdate ? "color:orange; height:20px;" : " height:20px;"))"
+                                  Value="@currentValue"
+                                  ValueChanged="@(async (x) => await HandleTextChanged(x, element, previousValue, currentValue))" />
+                }
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@if (!@isDisabled)
+{
+    <MudText Style="" Align="Align.Left" Typo="Typo.caption">@Description</MudText>
+}

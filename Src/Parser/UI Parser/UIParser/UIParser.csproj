@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+	<ItemGroup>
+		<SupportedPlatform Include="browser" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.0" />
+		<PackageReference Include="Excubo.Blazor.Grids" Version="3.1.24" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
+		<PackageReference Include="MudBlazor" Version="6.11.0" />
+		<PackageReference Include="MudBlazor.ThemeManager" Version="1.0.8" />
+		<PackageReference Include="Radzen.Blazor" Version="4.21.3" />
+		<PackageReference Include="RazorLight" Version="2.3.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\Config Parser\ConfigParser\ConfigParser.csproj" />
+	</ItemGroup>
+
+</Project>

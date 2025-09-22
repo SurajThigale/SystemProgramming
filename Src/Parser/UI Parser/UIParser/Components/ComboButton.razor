@@ -1,0 +1,13 @@
+﻿@using UIParser.Models
+
+<div class="combo-button">
+    <button class="combo-button-main">@MainButtonLabel</button>
+    <div class="combo-button-content" @onclick="ToggleOptions" style="display: @(showOptions ? "block" : "none")">
+        @foreach (var option in Options!)
+        {
+            <div class="combo-button-option">@option</div>
+        }
+    </div>
+</div>
+
+

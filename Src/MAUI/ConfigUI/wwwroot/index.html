@@ -1,0 +1,136 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>ConfigParser</title>
+    <base href="/" />
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+    <link href="css/app.css" rel="stylesheet" />
+    <link href="ConfigParser.styles.css" rel="stylesheet" />
+    <link href="css/styles.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <!--  <link rel="stylesheet" href="Metroui/metro.css"> -->
+
+    <style>
+
+        .elevator-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: end;
+        }
+
+        .elevator-shaft {
+            width: 300px; /* Adjust the width to your preference */
+            height: 200px; /* Adjust the height to your preference */
+            position: relative;
+            background-color: #f0f0f0;
+            margin: 10px;
+        }
+
+        .elevator {
+            width: 60px; /* Adjust the width to your preference */
+            height: 40px; /* Adjust the height to your preference */
+            position: absolute;
+            animation: elevatorMove 10s infinite linear;
+        }
+
+
+
+        .loading-message {
+            color: #007BFF;
+            font-size: 18px;
+            margin-top: 120px;
+            opacity: 0; /* Start with 0 opacity */
+            animation: fadeIn 2s forwards; /* 2 seconds fade-in animation */
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+
+
+        @keyframes elevatorMove {
+            0% {
+                top: 50%;
+                left: 10%;
+            }
+
+            25% {
+                top: 50%;
+                left: 90%;
+            }
+
+            50% {
+                top: 50%;
+                left: 10%;
+            }
+
+            75% {
+                top: 50%;
+                left: 90%;
+            }
+
+            100% {
+                top: 50%;
+                left: 10%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="status-bar-safe-area"></div>
+
+    <div id="app">
+        <div id="loading-screen" class="elevator-container">
+            <svg class="elevator" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 200">
+                <!-- Elevator body -->
+                <rect x="20" y="10" width="110" height="180" fill="#f0f0f0" stroke="#007BFF" stroke-width="2" />
+
+                <!-- Elevator doors -->
+                <rect x="25" y="10" width="30" height="180" fill="#fff" />
+                <rect x="95" y="10" width="30" height="180" fill="#fff" />
+
+                <!-- Elevator windows -->
+                <rect x="40" y="20" width="20" height="40" fill="#007BFF" />
+                <rect x="40" y="80" width="20" height="40" fill="#007BFF" />
+                <rect x="40" y="140" width="20" height="40" fill="#007BFF" />
+
+                <rect x="90" y="20" width="20" height="40" fill="#007BFF" />
+                <rect x="90" y="80" width="20" height="40" fill="#007BFF" />
+                <rect x="90" y="140" width="20" height="40" fill="#007BFF" />
+
+                <!-- Elevator buttons or other details can be added here -->
+
+            </svg>
+            <div class="loading-message">
+                Configuration Tool is Loading...
+            </div>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <script src="_framework/blazor.webview.js" autostart="false"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+    <!--  <script src="Metroui/metro.js"></script> -->
+</body>
+
+</html>

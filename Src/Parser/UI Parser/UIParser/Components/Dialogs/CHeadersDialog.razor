@@ -1,0 +1,40 @@
+﻿@page "/cheaders"
+
+@using MudBlazor
+@using Radzen
+@using Radzen.Blazor
+@using System.Text.RegularExpressions;
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="MudBlazor.AlignItems.Start">
+            <MudIcon Class="mt-1" Icon="@Icons.Material.Filled.BugReport" />
+            <MudText Typo="Typo.h6">@Title</MudText>
+            </MudStack>
+        </TitleContent>
+        <DialogContent>
+            <RadzenDataGrid FilterMode="FilterMode.Simple" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" LogicalFilterOperator="LogicalFilterOperator.Or"
+                            Style="height:600px" @ref="grid" Density="Density.Compact" LoadChildData="@LoadChildData"
+                            SelectionMode="DataGridSelectionMode.Single" AllowFiltering="true" AllowAlternatingRows="true"
+                            RowRender="@RowRender" GridLines="DataGridGridLines.Both" AllowSorting="true" AllowColumnResize="true"
+                            Data="@data" TItem="JsonElementRow">
+                <Columns>
+                    <RadzenDataGridColumn Width="75%" TItem="JsonElementRow" Sortable="false" Property="Property" Title="Property">
+                        <Template Context="Element">
+                            <RadzenLabel Text="@Element.DisplayName" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="JsonElementRow" Title="Value" Frozen="true" Sortable="false" Filterable="false">
+                        <Template Context="Element">
+                            <RadzenLabel hidden="@(Element.Children.Count != 0)" Text="@Element.Value.ToString()" />
+                        </Template>
+                    </RadzenDataGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="Submit">Close</MudButton>
+        </DialogActions>
+    </MudDialog>
+
+

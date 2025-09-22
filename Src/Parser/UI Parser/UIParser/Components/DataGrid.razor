@@ -1,0 +1,179 @@
+﻿@using ConfigParser.Model.ParserMetaData;
+@using System.Xml.Linq;
+@using System.Net
+@using Radzen
+@using UIParser.Models
+@using Radzen.Blazor
+
+<style>
+    .rz-cell-data {
+        height: 40px;
+    }
+
+    .mud-select .mud-select-input .mud-input-slot {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        box-sizing: inherit;
+    }
+
+</style>
+
+@{
+    bool isDisabled = false;
+    if (String.IsNullOrEmpty(configService?.getConfigFileName())) isDisabled = true;
+}
+
+@if(ShowAddDeleteButtons ?? true)
+{
+    <MudStack Row="true" Spacing="2" Style="@ButtonsStyle" Class="@ButtonsClass">
+        <MudButton Disabled="@isDisabled" OnClick="@AddElements" Color="@Color.Success" Class="add-item-btn">Add Item</MudButton>
+        <MudButton Disabled="@isDisabled" OnClick="@DeleteElements" Color="@Color.Error" Class="remove-item-btn">Remove Item</MudButton>
+    </MudStack>
+   
+}
+
+
+<RadzenDataGrid GridLines="DataGridGridLines.Both" AllowColumnResize="true" Density="Density.Compact" EditMode="Radzen.DataGridEditMode.Single"
+                Data="@Items" TItem="IXmlNode" ColumnWidth="100px" Style="@Style" class="@(this.Class + " pa-2")" SelectionMode="DataGridSelectionMode.Single" @bind-Value=@selectedItem>
+
+    <Columns>
+        @foreach (var column in Columns!)
+        {
+            <RadzenDataGridColumn Width="@column.Width" CssClass="@column.Class" Property="data[column.Name!].ToString()" Resizable="true" TItem="IXmlNode" Title="@column.Title">
+                <Template Context="data">
+                    @if (column is PropertyColumn propertyColumn)
+                    {
+                        @if (propertyColumn.Type == "int")
+                        {
+                            int? previousValue = int.TryParse(data[propertyColumn.Name!].ToString(), out int parsedPreviousValue) ? (int?)parsedPreviousValue : null;
+                            int? currentValue = int.TryParse(data[propertyColumn.Name!].ToString(), out int parsedCurrentValue) ? (int?)parsedCurrentValue : null;
+                            <MudTextField T="int?" AdornmentColor="Color.Default" DisableUnderLine="true"
+                                          Style="@((currentValue is null) ? "color:red; height:20px;" : (data.bIsDataUpdate ? "color:orange; height:20px;" : " height:20px;"))"
+                                          Class="@propertyColumn.Class"
+                                          Dense="true"
+                                          Value="@currentValue"
+                                          Validation="@(new Func<string?, bool>(ValidateIntType))"
+                                          ValueChanged="@(async (x) => await HandleTextChanged<int?>(propertyColumn.Name!, x, data, previousValue, currentValue))" />
+                        }
+                        else if (propertyColumn.Type == "binary")
+                        {
+                            int? previousIntValue = int.TryParse(data[propertyColumn.Name!].ToString(), out int parsedPreviousValue) ? (int?)parsedPreviousValue : null;
+                            int? currentIntValue = int.TryParse(data[propertyColumn.Name!].ToString(), out int parsedCurrentValue) ? (int?)parsedCurrentValue : null;
+                            Binary? previousValue = new Binary(previousIntValue ?? 0);
+                            Binary? currentValue = new Binary(currentIntValue ?? 0);
+
+                            <MudTextField T="string" AdornmentColor="Color.Default" DisableUnderLine="true"
+                                          Style="@((currentValue is null) ? "color:red; height:20px;" : (data.bIsDataUpdate ? "color:orange; height:20px;" : " height:20px;"))"
+                                          Class="@propertyColumn.Class"
+                                          Dense="true"
+                                          Value="@currentValue?.BinaryValue"
+                                          Validation="@(new Func<string?, bool>(ValidateBinaryType))"
+                                          ValueChanged="@(async (x) => await HandleTextChanged<Binary?>(propertyColumn.Name!, new Binary(x), data, previousValue, currentValue))" />
+                        }
+                        else if (propertyColumn.Type == "double")
+                        {
+                            double? previousValue = double.TryParse(data[propertyColumn.Name!].ToString(), out double parsedPreviousValue) ? (double?)parsedPreviousValue : null;
+                            double? currentValue = double.TryParse(data[propertyColumn.Name!].ToString(), out double parsedCurrentValue) ? (double?)parsedCurrentValue : null;
+                            <MudTextField T="double?" AdornmentColor="Color.Default" DisableUnderLine="true"
+                                          Style="@((currentValue is null) ? "color:red; height:20px;" : (data.bIsDataUpdate ? "color:orange; height:20px;" : " height:20px;"))"
+                                          Class="@propertyColumn.Class"
+                                          Dense="true"
+                                          Value="@currentValue"
+                                          Validation="@(new Func<double?, string>(ValidateDoubleType))"
+                                          ValueChanged="@(async (x) => await HandleTextChanged<double?>(propertyColumn.Name!, x, data, previousValue, currentValue))" />
+                        }
+                        else if (propertyColumn.Type == "string")
+                        {
+                            string? previousValue = data[propertyColumn!.Name!];
+                            string? currentValue = data[propertyColumn!.Name!];
+                            <MudTextField T="string" AdornmentColor="Color.Default" DisableUnderLine="true"
+                                          Style="@((currentValue is null) ? "color:red; height:20px;" : (data.bIsDataUpdate ? "color:orange; height:20px;" : " height:20px;"))"
+                                          Class="@propertyColumn.Class"
+                                          Dense="true"
+                                          Value="@currentValue"
+                                          ValueChanged="@(async (x) => await HandleTextChanged(propertyColumn.Name!, x, data, previousValue, currentValue))" />
+                        }
+                        else if (propertyColumn.Type == "IP")
+                        {
+                            IPAddress? previousValue = null;
+                            IPAddress? currentValue = null;
+
+                            try
+                            {
+                                if (!string.IsNullOrEmpty(data[propertyColumn!.Name!]))
+                                {
+                                    previousValue = IPAddress.Parse(data[propertyColumn!.Name!]);
+                                    currentValue = IPAddress.Parse(data[propertyColumn!.Name!]);
+                                }
+
+                                <MudTextField T="string" AdornmentColor="Color.Default" DisableUnderLine="true"
+                                              Style="@((currentValue is null) ? "color:red; height:20px;" : (data.bIsDataUpdate ? "color:orange; height:20px;" : " height:20px;"))"
+                                              Class="@propertyColumn.Class"
+                                              Dense="true"
+                                              Value="@(currentValue?.ToString())"
+                                              ValueChanged="@(async (x) =>
+                                                                                            {
+                                                                                                IPAddress? newIp = null;
+                                                                                                if (!string.IsNullOrEmpty(x) && IPAddress.TryParse(x, out var parsed))
+                                                                                                {
+                                                                                                    newIp = parsed;
+                                                                                                }
+                                                                                                await HandleTextChanged(propertyColumn.Name!, newIp, data, previousValue, currentValue);
+                                                                                            })" />
+                                }
+                            catch
+                            {
+                                <MudTextField T="string" Dense="true" DisableUnderLine="true"
+                                              Class="@propertyColumn.Class"
+                                              ValueChanged="@(async (x) =>
+                                                                                            {
+                                                                                                IPAddress? newIp = null;
+                                                                                                if (!string.IsNullOrEmpty(x) && IPAddress.TryParse(x, out var parsed))
+                                                                                                {
+                                                                                                    newIp = parsed;
+                                                                                                }
+                                                                                                await HandleTextChanged(propertyColumn.Name!, newIp, data, previousValue, currentValue);
+                                                                                            })"
+                              Style="width: 170px; height: 20px;color:red" AdornmentColor="Color.Success" />
+                                }
+                        }
+                    }
+                    else if (column is ComboBoxColumn comboBoxColumn)
+                    {
+                        string? previousValue = data[comboBoxColumn!.Name!];
+                        string? currentValue = data[comboBoxColumn!.Name!];
+
+                        if (currentValue is not null) ComboBoxListItems.Add(currentValue);
+
+                        <MudAutocomplete Margin="Margin.None" ResetValueOnEmptyText="true"
+                                         Dense="true" T="string" Value="@currentValue"
+                                         ValueChanged="@(async (x) => await HandleTextChanged(comboBoxColumn.Name!, x, data, previousValue, currentValue))"
+                                         Style="@((currentValue is null) ? "color:red; height:20px; box-size:inherit;" : (data.bIsDataUpdate ? "color:orange; height:20px;box-size:inherit;" : " height:20px;box-size:inherit;"))"
+                                         SearchFunc="@(async (x) => await SearchForComboBoxItems(x))" />
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+        }
+    </Columns>
+</RadzenDataGrid>
+
+@if (!@isDisabled)
+{
+    <MudStack Class="ml-1" Row="true" Justify="Justify.SpaceBetween" AlignItems="MudBlazor.AlignItems.Start">
+        <MudText Align="Align.Right" Typo="Typo.caption">@Description</MudText>
+
+        @if (Limit.HasValue)
+        {
+            if(Limit.Value != -1)
+            {
+                <MudText Align="Align.Left" Typo="Typo.caption">Limit : @Limit</MudText>
+            }
+        }
+
+
+    </MudStack>
+
+}
+
+

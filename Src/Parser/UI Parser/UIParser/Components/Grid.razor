@@ -1,0 +1,172 @@
+﻿@using ConfigParser.Model.ParserMetaData
+@using UIParser.Models
+@using Excubo.Blazor.Grids
+@using ConfigParser
+<Excubo.Blazor.Grids.Grid AllowResize="true" style="@Style" ElementClass="@Class" class="@Class" RowGap="2em" ColumnGap="1em">
+    <TitleSettings HeadingLevel="6" Alignment="Alignment.Center" />
+
+    @{
+        if (Columns == 0) Columns = 1;
+        string ColumnWidthPercent = (100 / Columns - 1) + "%";
+
+        if (Rows == 0) Rows = 1;
+        string RowHeightPercent = (100 / Rows - 4) + "%";
+    }
+    @for (int i = 0; i < Rows; i++)
+    {
+        <RowDefinition Height="@RowHeightPercent" />
+    }
+
+    @for (int i = 0; i < Columns; i++)
+    {
+        <ColumnDefinition Width="@ColumnWidthPercent" />
+    }
+
+    @foreach (var element in Elements!)
+    {
+
+        <Element Context="element" RowSpan="@element.RowSpan" ColumnSpan="@element.ColumnSpan" style="@element.Style" class="@element.Class" Column="@element.Column" Row="@element.Row" Title="@element.Title">
+            <div class="w-100 h-100 mt-2">
+                @foreach (var comp in element.Components)
+                {
+                    @switch (comp.TypeName)
+                    {
+                        case "ButtonGroup":
+                            {
+                                ButtonGroupMetaData buttonGroupComp = (ButtonGroupMetaData)comp;
+
+                                <ButtonGroup Style="@buttonGroupComp.Style" Class="@buttonGroupComp.Class" Buttons="@buttonGroupComp.Buttons"></ButtonGroup>
+                                break;
+                            }
+                        case "Button":
+                            {
+                                ButtonMetaData buttonComp = (ButtonMetaData)comp;
+
+                                <Button Style="@buttonComp.Style" Class="@buttonComp.Class" Name="@buttonComp.Name"></Button>
+                                break;
+                            }
+                        case "Grid":
+                            {
+                                GridMetaData gridComp = (GridMetaData)comp;
+
+                                <UIParser.Components.Grid Style="@gridComp.Style" Class="@gridComp.Class" Elements="@gridComp.Elements" Rows="@gridComp.RowDefinition.Count" Columns="@gridComp.ColumnDefinition.Count"></UIParser.Components.Grid>
+
+                                break;
+                            }
+                        case "DataGrid":
+                            {
+                                DataGridMetaData tableComp = (DataGridMetaData)comp;
+
+                                var itemsTuple = Task.Run(async () => await Config!.GetListInSetAsync(tableComp.Items!)).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                                var items = itemsTuple.Item1;
+
+                                if (items is null)
+                                {
+                                    items = new();
+                                    List<IXmlNode> itemToSend = items;
+                                }
+
+                                int? Limit = -1;
+                                if (tableComp?.Limit is not null)
+                                {
+                                    int? currentValue = int.TryParse(tableComp.Limit, out int parsedLimit) ? (int?)parsedLimit : null;
+
+                                    if (currentValue is not null)
+                                    {
+                                        Limit = currentValue;
+                                    }
+                                    else
+                                    {
+                                        if (configNativeService?.ArrayLimits?.ContainsKey(tableComp?.Limit!) ?? false)
+                                        {
+                                            Limit = configNativeService?.ArrayLimits?[tableComp?.Limit!];
+                                        }
+                                    }
+                                }
+
+
+                                <UIParser.Components.DataGrid Description="@tableComp?.Description" Limit="@Limit"
+                                                              ButtonsStyle="@tableComp?.ButtonsStyle" ButtonsClass="@tableComp?.ButtonsClass"
+                                                              ShowAddDeleteButtons="@tableComp?.ShowAddDeleteButtons"
+                                                              XPathName="@tableComp?.Items" Style="@tableComp?.Style" Parent="@itemsTuple.Item2"
+                                                              Class="@tableComp?.Class" Items="@items" Columns="@tableComp?.Columns">
+                                </UIParser.Components.DataGrid>
+                                break;
+                            }
+                        case "NameValuePairGrid":
+                            {
+                                NameValuePairGridMetaData tableComp = (NameValuePairGridMetaData)comp;
+
+                                var itemsTuple = Task.Run(async () => await Config!.GetListInSetAsync(tableComp.Items!)).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                                var items = itemsTuple.Item1;
+
+                                if (items is null)
+                                {
+                                    items = new();
+                                    List<IXmlNode> itemToSend = items;
+                                }
+
+                                List<IXmlNode> xmlItems = new();
+
+                                IXmlNode? Parent = null;
+                                foreach (var item in items)
+                                {
+                                    foreach (var element in item.GetChildren())
+                                    {
+                                        xmlItems.Add(element);
+                                    }
+                                    Parent = item;
+                                }
+                                
+                                <UIParser.Components.NameValuePairGrid Description="@tableComp?.Description"
+                                                                       XPathName="@tableComp?.Items" Type="@tableComp?.Type"
+                                                                       ButtonsStyle="@tableComp?.ButtonsStyle" ButtonsClass="@tableComp?.ButtonsClass"
+                                                                       ShowAddDeleteButtons="@tableComp?.ShowAddDeleteButtons"
+                                                                       Style="@tableComp?.Style" Parent="@Parent" Class="@tableComp?.Class"
+                                                                       Items="@xmlItems" />
+                                break;
+                            }
+                        case "TextEdit":
+                            {
+                                TextEditMetaData textEditComp = (TextEditMetaData)comp;
+
+                                ResultSet result = Task.Run(async () => await Config!.SearchInSetAsync(textEditComp.Value!)).ConfigureAwait(false).GetAwaiter().GetResult();
+                                var element = result?.Element;
+                                bool? found = result?.Result;
+                                <TextEdit Type="@textEditComp.Type" Class="@textEditComp.Class" ElementFound="@found" Style="@textEditComp.Style" Name="@textEditComp.Name" ElementValue="@element" Remark="@textEditComp.Remark"></TextEdit>
+                                break;
+                            }
+                        case "ComboButton":
+                            {
+                                break;
+                            }
+                        case "Tab":
+                            {
+                                TabMetaData tabComp = (TabMetaData)comp;
+
+                                <Tab Style="@tabComp.Style" Class="@tabComp.Class" Name="@tabComp.Name" TabItems="@tabComp.Tabs" />
+                                break;
+                            }
+                        case "SLConfig":
+                            {
+                                SLConfigMetaData tabComp = (SLConfigMetaData)comp;
+
+                                <SLConfig Style="@tabComp.Style" Class="@tabComp.Class" />
+                                break;
+                            }
+                        case "HeaderFileGeneration":
+                            {
+                                HeaderFileGenMetaData tabComp = (HeaderFileGenMetaData)comp;
+
+                                <HeaderFileGeneration Style="@tabComp.Style" Class="@tabComp.Class" />
+                                break;
+                            }
+                    }
+                }
+            </div>
+        </Element>
+    }
+    </Excubo.Blazor.Grids.Grid>
+

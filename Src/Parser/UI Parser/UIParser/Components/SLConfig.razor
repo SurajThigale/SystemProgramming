@@ -1,0 +1,133 @@
+﻿@using ConfigParser.Services
+@using Excubo.Blazor.Grids
+@using UIParser.Services
+@using Radzen
+@using Radzen.Blazor
+
+@{
+    bool isDisabled = configNativeService?.GeneratedData is null;
+    bool isStatusHidden = AppState!.ConfigGenerationState == EGenerationState.None;
+}
+
+<Excubo.Blazor.Grids.Grid AllowResize="true" style="@Style" ElementClass="@Class" class="@Class" RowGap="2em" ColumnGap="1em">
+    <TitleSettings HeadingLevel="6" Alignment="Alignment.Center" />
+
+    @{
+        var orderedKeys = new List<string>();
+
+        if (configNativeService?.GeneratedData?.data is not null)
+        {
+            // Add master first
+            orderedKeys.Add("master");
+
+            // Add LCU keys in sorted order
+            var lcuKeys = configNativeService.GeneratedData.data.Keys
+            .Where(k => k.StartsWith("lcu", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(k => int.TryParse(k.Substring(3), out var n) ? n : int.MaxValue);
+            orderedKeys.AddRange(lcuKeys);
+
+            // Add IOC keys in sorted order
+            var iocKeys = configNativeService.GeneratedData.data.Keys
+            .Where(k => k.StartsWith("ioc", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(k => int.TryParse(k.Substring(3), out var n) ? n : int.MaxValue);
+            orderedKeys.AddRange(iocKeys);
+
+            // Add XC keys in sorted order
+            var xcKeys = configNativeService.GeneratedData.data.Keys
+            .Where(k => k.StartsWith("xc", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(k => int.TryParse(k.Substring(2), out var n) ? n : int.MaxValue);
+            orderedKeys.AddRange(xcKeys);
+        }
+
+        int index = 0;
+        int itemsPerRow = 2;
+
+        foreach (var key in orderedKeys)
+        {
+            int row = index / itemsPerRow;
+            int column = index % itemsPerRow;
+
+            string title = key switch
+            {
+                "master" => "MASTER",
+                _ when key.StartsWith("lcu", StringComparison.OrdinalIgnoreCase)
+                => $"LCU {int.Parse(key.Substring(3))}",
+                _ when key.StartsWith("ioc", StringComparison.OrdinalIgnoreCase)
+                => $"IOC {int.Parse(key.Substring(3))}",
+                _ when key.StartsWith("xc", StringComparison.OrdinalIgnoreCase)
+                => $"EX {(int.TryParse(key.Substring(2), out var xcIndex) ? xcIndex : 1)}",
+                _ => key.ToUpper()
+            };
+
+            <Element Row="@row" Column="@column" Title="@title">
+                @RenderCard(key)
+            </Element>
+
+            index++;
+        }
+    }
+</Excubo.Blazor.Grids.Grid>
+
+@code {
+    private bool isStatusHidden = false;
+
+    RenderFragment RenderCard(string key) => __builder =>
+    {
+        if (configNativeService?.GeneratedData?.data?.TryGetValue(key, out var data) == true)
+        {
+            <RadzenCard>
+                <RadzenTextArea Rows="4"
+                                Value="@data.SLConfig"
+                                Disabled="true"
+                                class="w-100" />
+
+                <MudStack Justify="Justify.SpaceBetween"
+                          AlignItems="MudBlazor.AlignItems.Start"
+                          Row="true"
+                          Class="mt-1">
+
+                    <MudText Color="MudBlazor.Color.Primary"
+                             Typo="MudBlazor.Typo.body2">
+                        Size : @data.Size
+                    </MudText>
+
+                    @if (AppState!.ConfigGenerationState == EGenerationState.Generated)
+                    {
+                        <MudText hidden="@isStatusHidden"
+                                 Color="MudBlazor.Color.Success"
+                                 Typo="MudBlazor.Typo.body2">
+                            Generation Status : Completed
+                        </MudText>
+                    }
+                    else if (AppState!.ConfigGenerationState == EGenerationState.NotGenerated)
+                    {
+                        <MudText hidden="@isStatusHidden"
+                                 Color="MudBlazor.Color.Error"
+                                 Typo="MudBlazor.Typo.body2">
+                            Generation Status : Outdated
+                        </MudText>
+                    }
+
+                    @if (AppState!.ConfigUploadState == EUplaodState.Uploaded &&
+               configNativeService.GeneratedData.UploadStatus?.TryGetValue(key, out var uploaded) == true && uploaded)
+                    {
+                        <MudText hidden="@isStatusHidden"
+                                 Color="MudBlazor.Color.Success"
+                                 Typo="MudBlazor.Typo.body2">
+                            Upload Status : Completed
+                        </MudText>
+                    }
+                    else if (AppState!.ConfigUploadState == EUplaodState.Uploaded)
+                    {
+                        <MudText hidden="@isStatusHidden"
+                                 Color="MudBlazor.Color.Error"
+                                 Typo="MudBlazor.Typo.body2">
+                            Upload Status : Failed
+                        </MudText>
+                    }
+                </MudStack>
+            </RadzenCard>
+            ;
+        }
+    };
+}
